@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#090a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="aiThss - Personal Bio, Portfolio & Tech Showcase">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="aiThss - Bio & Portfolio">
+  <meta property="og:description" content="Khám phá các dự án công nghệ, mạng xã hội và kênh liên hệ của aiThss.">
+  <meta property="og:type" content="website">
+
+  <title>aiThss | Bio & Portfolio</title>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+
+  <!-- Ambient Animated Background -->
+  <div class="ambient-bg" aria-hidden="true">
+    <div class="aurora-blob blob-1"></div>
+    <div class="aurora-blob blob-2"></div>
+    <div class="aurora-blob blob-3"></div>
+  </div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- ================= PUBLIC BIO APP ================= -->
+  <main id="appContainer" class="app-container">
+
+    <!-- Top Action Bar -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <div id="livePill" class="live-status-pill">
+          <span class="pulse-dot"></span>
+          <span id="liveTimeText">Hà Nội • Đang cập nhật…</span>
+        </div>
+      </div>
+      <div class="top-bar-right">
+        <button id="themeToggleBtn" class="glass-btn glass-btn-icon" aria-label="Đổi giao diện" title="Đổi theme">
+          <span id="themeIconWrap"></span>
+        </button>
+        <button id="qrModalBtn" class="glass-btn glass-btn-icon" aria-label="Mã QR cá nhân" title="Chia sẻ mã QR">
+          <span id="qrIconWrap"></span>
+        </button>
+        <button id="shareBioBtn" class="glass-btn glass-btn-icon" aria-label="Chia sẻ liên kết" title="Chia sẻ bio">
+          <span id="shareIconWrap"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Profile Header -->
+    <section class="profile-card" aria-label="Thông tin cá nhân">
+      <div id="avatarWrapper" class="avatar-wrapper" title="Chạm 5 lần để mở Admin bí mật">
+        <div class="avatar-ring"></div>
+        <img id="profileAvatar" class="avatar-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80" alt="Ảnh đại diện" width="104" height="104" fetchpriority="high">
+        <div id="profileStatusBadge" class="status-badge">
+          <span id="profileStatusDot" class="status-dot"></span>
+        </div>
+      </div>
+
+      <div class="profile-name-row">
+        <h1 id="profileName" class="profile-name">aiThss</h1>
+        <span id="verifiedBadge" class="verified-icon" aria-label="Đã xác minh"></span>
+      </div>
+
+      <p id="profileHandle" class="profile-handle">@aithss</p>
+
+      <div id="profileStatusTextWrap" class="profile-status-text">
+        <span class="pulse-dot"></span>
+        <span id="profileStatusText">Sẵn sàng nhận dự án</span>
+      </div>
+
+      <p id="profileBio" class="profile-bio">
+        Full-stack Developer & Creative Technologist. Xây dựng giải pháp AI & trải nghiệm web hiện đại.
+      </p>
+
+      <!-- Social Links Row -->
+      <nav id="socialRow" class="social-row" aria-label="Mạng xã hội"></nav>
+
+      <!-- Action Grid -->
+      <div class="action-grid">
+        <button id="actionQrBtn" class="action-card" type="button">
+          <div class="action-icon-wrap" id="actionQrIcon"></div>
+          <span>Mã QR Bio</span>
+        </button>
+        <button id="actionDonateBtn" class="action-card" type="button">
+          <div class="action-icon-wrap" id="actionDonateIcon"></div>
+          <span>Ủng hộ / VietQR</span>
+        </button>
+        <button id="actionContactBtn" class="action-card" type="button">
+          <div class="action-icon-wrap" id="actionContactIcon"></div>
+          <span>Nhắn tin nhanh</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Category Filter Tabs -->
+    <nav id="categoryTabs" class="category-tabs" aria-label="Bộ lọc danh mục"></nav>
+
+    <!-- Links List -->
+    <section id="linksList" class="links-list" aria-label="Danh sách liên kết">
+      <div class="skeleton-link" style="text-align: center; color: var(--text-muted); padding: 40px 0;">Đang tải danh sách liên kết…</div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer-section">
+      <p>© <span id="currentYear"></span> aiThss. Built with ⚡ & Passion.</p>
+      <a href="#admin" id="adminStealthBtn" class="admin-stealth-link">
+        <span id="adminLockIcon"></span> Quản trị viên
+      </a>
+    </footer>
+
+    <!-- Floating Ambient Audio Dock -->
+    <aside id="audioDock" class="audio-dock hidden" aria-label="Trình phát nhạc nền">
+      <div class="audio-dock-left">
+        <button id="audioPlayBtn" class="audio-play-btn" aria-label="Phát / Dừng nhạc">
+          <span id="audioPlayIcon"></span>
+        </button>
+        <div class="audio-meta">
+          <span id="audioTitle" class="audio-title">Lofi Chill Beats</span>
+          <span id="audioArtist" class="audio-artist">Coding Ambient</span>
+        </div>
+      </div>
+      <div class="equalizer" aria-hidden="true">
+        <div class="eq-bar"></div>
+        <div class="eq-bar"></div>
+        <div class="eq-bar"></div>
+        <div class="eq-bar"></div>
+      </div>
+      <audio id="bgAudio" preload="none"></audio>
+    </aside>
+
+  </main>
+
+  <!-- ================= MODALS & BOTTOM SHEETS ================= -->
+
+  <!-- 1. QR Code Share Modal -->
+  <div id="qrModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h2 id="qrModalTitle" class="sheet-title">Quét mã QR để mở Bio</h2>
+        <button class="sheet-close-btn" data-close-modal="qrModal" aria-label="Đóng"><span class="modal-close-icon"></span></button>
+      </div>
+      <div class="qr-box">
+        <div id="qrSvgContainer" class="qr-canvas-wrap"></div>
+        <p style="font-size: 13px; color: var(--text-secondary); max-width: 300px;">
+          Hướng camera điện thoại để truy cập nhanh trang cá nhân của mình trên mọi thiết bị.
+        </p>
+        <button id="downloadQrBtn" class="glass-btn" style="width: 100%; justify-content: center; padding: 12px;">
+          <span id="dlQrIcon"></span> Tải ảnh mã QR
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. VietQR & Donate Modal -->
+  <div id="donateModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="donateModalTitle">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h2 id="donateModalTitle" class="sheet-title">Ủng hộ / Mua Cà Phê ☕</h2>
+        <button class="sheet-close-btn" data-close-modal="donateModal" aria-label="Đóng"><span class="modal-close-icon"></span></button>
+      </div>
+      <div class="qr-box">
+        <div id="vietqrImgContainer" class="qr-canvas-wrap" style="padding: 10px; background: #fff; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+          <img id="vietqrImg" src="" alt="Mã VietQR Chuyển khoản" style="max-width: 220px; border-radius: 8px;">
+        </div>
+        <div class="vietqr-card" style="width: 100%; text-align: left;">
+          <div class="bank-row">
+            <span class="bank-label">Ngân hàng:</span>
+            <span id="bankNameVal" class="bank-val">MB Bank</span>
+          </div>
+          <div class="bank-row">
+            <span class="bank-label">Số tài khoản:</span>
+            <span id="accountNoVal" class="bank-val">
+              <span id="accountNoText">0388888888</span>
+              <button id="copyAccBtn" class="link-action-btn" title="Sao chép số tài khoản"><span id="copyAccIcon"></span></button>
+            </span>
+          </div>
+          <div class="bank-row">
+            <span class="bank-label">Chủ tài khoản:</span>
+            <span id="accountNameVal" class="bank-val">DUONG DANH THANG</span>
+          </div>
+          <div class="bank-row" id="momoRow">
+            <span class="bank-label">Ví MoMo:</span>
+            <span id="momoPhoneVal" class="bank-val">
+              <span id="momoPhoneText">0388888888</span>
+              <button id="copyMomoBtn" class="link-action-btn" title="Sao chép MoMo"><span id="copyMomoIcon"></span></button>
+            </span>
+          </div>
+        </div>
+        <p style="font-size: 12.5px; color: var(--text-muted);">
+          Cảm ơn bạn rất nhiều vì đã đồng hành và ủng hộ các sản phẩm của mình! ❤️
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Quick Contact Modal -->
+  <div id="contactModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h2 id="contactModalTitle" class="sheet-title">Liên hệ trực tiếp</h2>
+        <button class="sheet-close-btn" data-close-modal="contactModal" aria-label="Đóng"><span class="modal-close-icon"></span></button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 6px;">
+          Chọn kênh trò chuyện nhanh thuận tiện nhất cho bạn:
+        </p>
+        <a id="contactTeleLink" href="#" target="_blank" rel="noopener" class="link-card" style="padding: 14px;">
+          <div class="link-icon-wrap" id="contactTeleIcon"></div>
+          <div class="link-content">
+            <span class="link-title">Telegram Chat</span>
+            <span class="link-subtitle">Phản hồi siêu tốc, bảo mật 24/7</span>
+          </div>
+          <span class="link-action-btn"><span class="open-ext-icon"></span></span>
+        </a>
+        <a id="contactZaloLink" href="#" target="_blank" rel="noopener" class="link-card" style="padding: 14px;">
+          <div class="link-icon-wrap" id="contactZaloIcon"></div>
+          <div class="link-content">
+            <span class="link-title">Zalo Chat</span>
+            <span class="link-subtitle">Trao đổi công việc tiện lợi</span>
+          </div>
+          <span class="link-action-btn"><span class="open-ext-icon"></span></span>
+        </a>
+        <a id="contactMailLink" href="#" class="link-card" style="padding: 14px;">
+          <div class="link-icon-wrap" id="contactMailIcon"></div>
+          <div class="link-content">
+            <span class="link-title">Gửi Email</span>
+            <span class="link-subtitle">Hợp tác & gửi tài liệu chi tiết</span>
+          </div>
+          <span class="link-action-btn"><span class="open-ext-icon"></span></span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HIDDEN ADMIN VIEW (/admin) ================= -->
+  <div id="adminView" class="admin-view" aria-label="Khu vực quản trị hệ thống">
+
+    <!-- 1. PIN Lock Screen -->
+    <div id="pinScreen" class="pin-screen">
+      <div class="pin-shield-icon" id="shieldIconWrap"></div>
+      <h2 class="pin-title">Khu vực Quản trị</h2>
+      <p class="pin-desc">Nhập mã PIN bí mật của bạn để quản lý liên kết và hồ sơ.</p>
+
+      <form id="pinForm" class="pin-input-wrap">
+        <input id="adminPinInput" class="pin-input" type="password" maxlength="8" inputmode="numeric" placeholder="••••" autocomplete="off" spellcheck="false" required>
+      </form>
+
+      <div class="pin-keypad" id="pinKeypad">
+        <button class="pin-key" data-key="1" type="button">1</button>
+        <button class="pin-key" data-key="2" type="button">2</button>
+        <button class="pin-key" data-key="3" type="button">3</button>
+        <button class="pin-key" data-key="4" type="button">4</button>
+        <button class="pin-key" data-key="5" type="button">5</button>
+        <button class="pin-key" data-key="6" type="button">6</button>
+        <button class="pin-key" data-key="7" type="button">7</button>
+        <button class="pin-key" data-key="8" type="button">8</button>
+        <button class="pin-key" data-key="9" type="button">9</button>
+        <button class="pin-key" data-action="clear" type="button">C</button>
+        <button class="pin-key" data-key="0" type="button">0</button>
+        <button class="pin-key" data-action="backspace" type="button">⌫</button>
+      </div>
+
+      <button id="pinSubmitBtn" class="pin-btn-submit" type="button">Đăng nhập Quản trị</button>
+      <button id="exitAdminBtn" class="glass-btn" style="margin-top: 16px;" type="button">Quay lại Bio</button>
+    </div>
+
+    <!-- 2. Full Admin Dashboard -->
+    <div id="adminDashboard" class="admin-dashboard">
+
+      <!-- Admin Header -->
+      <header class="admin-header">
+        <div class="admin-title-row">
+          <span class="admin-badge">Admin Portal</span>
+          <h2 class="admin-title">Bảng điều khiển</h2>
+        </div>
+        <div class="admin-nav-actions">
+          <button id="adminBackToBioBtn" class="glass-btn" type="button">Xem Bio</button>
+          <button id="adminLogoutBtn" class="glass-btn" style="color: #f43f5e;" type="button">Đăng xuất</button>
+        </div>
+      </header>
+
+      <!-- Stats Summary Cards -->
+      <div class="admin-stats-grid">
+        <div class="stat-card">
+          <span class="stat-label"><span id="statViewsIcon"></span> Lượt xem Bio</span>
+          <span id="statViewsVal" class="stat-value">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label"><span id="statClicksIcon"></span> Tổng lượt click link</span>
+          <span id="statClicksVal" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <nav class="admin-tabs" id="adminTabsNav">
+        <button class="admin-tab active" data-tab="tabLinks" type="button"><span class="tab-icon-links"></span> Liên kết</button>
+        <button class="admin-tab" data-tab="tabProfile" type="button"><span class="tab-icon-profile"></span> Hồ sơ</button>
+        <button class="admin-tab" data-tab="tabSocials" type="button"><span class="tab-icon-socials"></span> Mạng xã hội</button>
+        <button class="admin-tab" data-tab="tabDonate" type="button"><span class="tab-icon-donate"></span> VietQR / Donate</button>
+        <button class="admin-tab" data-tab="tabTheme" type="button"><span class="tab-icon-theme"></span> Giao diện & Nhạc</button>
+        <button class="admin-tab" data-tab="tabSecurity" type="button"><span class="tab-icon-security"></span> Bảo mật & Sao lưu</button>
+      </nav>
+
+      <!-- TAB 1: LINKS CRUD -->
+      <section id="tabLinks" class="tab-panel active">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="font-size: 16px; font-weight: 700;">Quản lý liên kết cá nhân</h3>
+          <button id="openAddLinkModalBtn" class="btn-primary" style="padding: 9px 16px;" type="button">
+            <span id="addLinkIcon"></span> Thêm liên kết mới
+          </button>
+        </div>
+
+        <div id="adminLinksList" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- TAB 2: PROFILE SETTINGS -->
+      <section id="tabProfile" class="tab-panel">
+        <h3 style="font-size: 16px; font-weight: 700;">Cài đặt thông tin hồ sơ</h3>
+        <form id="adminProfileForm" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="inpProfileName">Họ và tên hiển thị</label>
+              <input id="inpProfileName" class="form-input" type="text" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inpProfileHandle">Username / Handle</label>
+              <input id="inpProfileHandle" class="form-input" type="text" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inpProfileAvatar">URL Ảnh đại diện</label>
+            <input id="inpProfileAvatar" class="form-input" type="url" placeholder="https://..." required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inpProfileBio">Tiểu sử (Bio Tagline)</label>
+            <textarea id="inpProfileBio" class="form-textarea" placeholder="Giới thiệu bản thân ngắn gọn…"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="inpProfileLocation">Địa điểm</label>
+              <input id="inpProfileLocation" class="form-input" type="text" placeholder="Hà Nội, Việt Nam">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inpProfileStatusText">Trạng thái công việc</label>
+              <input id="inpProfileStatusText" class="form-input" type="text" placeholder="Sẵn sàng nhận dự án">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="switch-label">
+              <span class="form-label">Tích xanh xác minh</span>
+              <input id="chkProfileVerified" type="checkbox" style="display: none;">
+              <span class="switch-control"></span>
+            </label>
+            <label class="switch-label">
+              <span class="form-label">Hiển thị trạng thái</span>
+              <input id="chkStatusVisible" type="checkbox" style="display: none;">
+              <span class="switch-control"></span>
+            </label>
+          </div>
+
+          <button class="btn-primary" type="submit" style="margin-top: 10px;">Lưu cập nhật hồ sơ</button>
+        </form>
+      </section>
+
+      <!-- TAB 3: SOCIAL LINKS -->
+      <section id="tabSocials" class="tab-panel">
+        <h3 style="font-size: 16px; font-weight: 700;">Liên kết mạng xã hội</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+          Bật/tắt và điền link tới trang cá nhân các nền tảng xã hội của bạn:
+        </p>
+        <form id="adminSocialsForm" style="display: flex; flex-direction: column; gap: 12px;">
+          <div id="adminSocialsInputs" style="display: flex; flex-direction: column; gap: 12px;"></div>
+          <button class="btn-primary" type="submit" style="margin-top: 10px;">Lưu mạng xã hội</button>
+        </form>
+      </section>
+
+      <!-- TAB 4: VIETQR / DONATE -->
+      <section id="tabDonate" class="tab-panel">
+        <h3 style="font-size: 16px; font-weight: 700;">Cấu hình VietQR & Ủng hộ</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+          Hệ thống sẽ tự động tạo mã VietQR theo chuẩn Napas 24/7 để người xem quét chuyển khoản trực tiếp:
+        </p>
+        <form id="adminDonateForm" style="display: flex; flex-direction: column; gap: 14px;">
+          <label class="switch-label">
+            <span class="form-label">Kích hoạt tính năng Ủng hộ</span>
+            <input id="chkDonateEnabled" type="checkbox" style="display: none;">
+            <span class="switch-control"></span>
+          </label>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="selBankId">Ngân hàng</label>
+              <select id="selBankId" class="form-select">
+                <option value="MB">MB Bank (Quân Đội)</option>
+                <option value="VCB">Vietcombank</option>
+                <option value="TCB">Techcombank</option>
+                <option value="VPB">VPBank</option>
+                <option value="ACB">ACB</option>
+                <option value="BIDV">BIDV</option>
+                <option value="VIB">VIB</option>
+                <option value="TPB">TPBank</option>
+                <option value="STB">Sacombank</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inpAccountNo">Số tài khoản</label>
+              <input id="inpAccountNo" class="form-input" type="text" placeholder="0388888888" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="inpAccountName">Tên chủ tài khoản</label>
+              <input id="inpAccountName" class="form-input" type="text" placeholder="DUONG DANH THANG" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inpMomoPhone">Số điện thoại MoMo</label>
+              <input id="inpMomoPhone" class="form-input" type="tel" placeholder="0388888888">
+            </div>
+          </div>
+
+          <button class="btn-primary" type="submit" style="margin-top: 10px;">Lưu cấu hình VietQR</button>
+        </form>
+      </section>
+
+      <!-- TAB 5: THEME & MUSIC -->
+      <section id="tabTheme" class="tab-panel">
+        <h3 style="font-size: 16px; font-weight: 700;">Giao diện & Nhạc nền</h3>
+        <form id="adminThemeForm" style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label" for="selDefaultTheme">Giao diện mặc định</label>
+            <select id="selDefaultTheme" class="form-select">
+              <option value="cyber-dark">Cyber Dark (Tối hiện đại & Neon Cyan)</option>
+              <option value="emerald-aurora">Emerald Aurora (Xanh ngọc lấp lánh)</option>
+              <option value="obsidian-gold">Obsidian Gold (Đen Carbon & Vàng Gold sang trọng)</option>
+              <option value="sunset-vibe">Sunset Vibe (Hoàng hôn & Tím Rose)</option>
+              <option value="midnight-mono">Midnight Mono (Trắng Đen tối giản)</option>
+            </select>
+          </div>
+
+          <h4 style="font-size: 15px; font-weight: 700; margin-top: 10px;">Cài đặt Nhạc nền Ambient</h4>
+
+          <label class="switch-label">
+            <span class="form-label">Kích hoạt trình phát nhạc</span>
+            <input id="chkMusicEnabled" type="checkbox" style="display: none;">
+            <span class="switch-control"></span>
+          </label>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="inpMusicTitle">Tên bài hát</label>
+              <input id="inpMusicTitle" class="form-input" type="text" placeholder="Lofi Chill Beats">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inpMusicArtist">Nghệ sĩ / Thể loại</label>
+              <input id="inpMusicArtist" class="form-input" type="text" placeholder="Relaxing Coding">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inpMusicAudioUrl">Đường dẫn file Audio (.mp3)</label>
+            <input id="inpMusicAudioUrl" class="form-input" type="url" placeholder="https://...mp3">
+          </div>
+
+          <button class="btn-primary" type="submit" style="margin-top: 10px;">Lưu Giao diện & Nhạc</button>
+        </form>
+      </section>
+
+      <!-- TAB 6: SECURITY & BACKUP -->
+      <section id="tabSecurity" class="tab-panel">
+        <h3 style="font-size: 16px; font-weight: 700;">Đổi mã PIN Quản trị</h3>
+        <form id="adminChangePinForm" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+          <div class="form-group">
+            <label class="form-label" for="inpCurrentPin">Mã PIN hiện tại</label>
+            <input id="inpCurrentPin" class="form-input" type="password" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="inpNewPin">Mã PIN mới (ít nhất 4 số)</label>
+              <input id="inpNewPin" class="form-input" type="password" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="inpConfirmPin">Xác nhận PIN mới</label>
+              <input id="inpConfirmPin" class="form-input" type="password" required>
+            </div>
+          </div>
+          <button class="btn-primary" type="submit">Cập nhật mã PIN</button>
+        </form>
+
+        <h3 style="font-size: 16px; font-weight: 700; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 18px;">
+          Sao lưu & Khôi phục dữ liệu
+        </h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <a id="btnExportData" href="/api/admin/export" class="btn-secondary" download="bio-backup.json">
+            <span id="exportIcon"></span> Xuất file sao lưu (JSON)
+          </a>
+          <button id="btnImportDataModal" class="btn-secondary" type="button">
+            <span id="importIcon"></span> Nhập file sao lưu
+          </button>
+          <button id="btnResetClicks" class="btn-secondary" style="color: #fbbf24;" type="button">
+            Đặt lại số lượt click & xem
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ================= ADD / EDIT LINK MODAL ================= -->
+  <div id="linkModalOverlay" class="admin-modal-overlay">
+    <div class="admin-modal">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 id="linkModalTitle" style="font-size: 18px; font-weight: 800;">Thêm liên kết mới</h3>
+        <button id="closeLinkModalBtn" class="sheet-close-btn" type="button"><span class="modal-close-icon"></span></button>
+      </div>
+
+      <form id="linkForm" style="display: flex; flex-direction: column; gap: 14px;">
+        <input type="hidden" id="editLinkId">
+
+        <div class="form-group">
+          <label class="form-label" for="inpLinkTitle">Tiêu đề liên kết *</label>
+          <input id="inpLinkTitle" class="form-input" type="text" placeholder="vd: 🚀 Portfolio của tôi" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inpLinkUrl">Đường dẫn URL *</label>
+          <input id="inpLinkUrl" class="form-input" type="url" placeholder="https://..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inpLinkSubtitle">Mô tả phụ (Subtitle)</label>
+          <input id="inpLinkSubtitle" class="form-input" type="text" placeholder="Khám phá các sản phẩm và dịch vụ…">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="selLinkCategory">Danh mục</label>
+            <select id="selLinkCategory" class="form-select">
+              <option value="projects">Dự án</option>
+              <option value="services">Liên hệ & Dịch vụ</option>
+              <option value="social">Mạng xã hội</option>
+              <option value="all">Khác</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="selLinkIcon">Biểu tượng (Icon)</label>
+            <select id="selLinkIcon" class="form-select">
+              <option value="sparkles">✨ Sparkles (Nổi bật)</option>
+              <option value="link">🔗 Link (Mặc định)</option>
+              <option value="github">📦 GitHub Repos</option>
+              <option value="telegram">💬 Telegram</option>
+              <option value="facebook">📘 Facebook</option>
+              <option value="zalo">💬 Zalo</option>
+              <option value="tiktok">🎵 TikTok</option>
+              <option value="youtube">▶️ YouTube</option>
+              <option value="coffee">☕ Cà phê / Donate</option>
+              <option value="folder-git-2">📁 Dự án Code</option>
+              <option value="mail">✉️ Email</option>
+              <option value="globe">🌐 Website</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="inpLinkBadge">Nhãn Badge (tùy chọn)</label>
+            <input id="inpLinkBadge" class="form-input" type="text" placeholder="vd: HOT, NEW, 24/7, FREE">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="inpLinkBadgeColor">Màu Badge</label>
+            <select id="inpLinkBadgeColor" class="form-select">
+              <option value="#f43f5e">Đỏ Hồng (#f43f5e)</option>
+              <option value="#06b6d4">Xanh Cyan (#06b6d4)</option>
+              <option value="#10b981">Xanh Lá (#10b981)</option>
+              <option value="#8b5cf6">Tím Violet (#8b5cf6)</option>
+              <option value="#eab308">Vàng Gold (#eab308)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="switch-label">
+            <span class="form-label">Nổi bật (Spotlight Card)</span>
+            <input id="chkLinkFeatured" type="checkbox" style="display: none;">
+            <span class="switch-control"></span>
+          </label>
+          <label class="switch-label">
+            <span class="form-label">Kích hoạt hiển thị</span>
+            <input id="chkLinkActive" type="checkbox" checked style="display: none;">
+            <span class="switch-control"></span>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button class="btn-primary" type="submit" style="flex: 1;">Lưu liên kết</button>
+          <button id="cancelLinkBtn" class="btn-secondary" type="button">Hủy</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/js/icons.js"></script>
+  <script src="/js/qr.js"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/admin.js"></script>
+
+  <script>
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

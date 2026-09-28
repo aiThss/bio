@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  bio:
+    build: .
+    container_name: aithss_bio
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      # Data persistence: saves profile, links, clicks, and PIN across rebuilds
+      - ./data:/app/data

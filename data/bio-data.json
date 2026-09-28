@@ -1,0 +1,166 @@
+{
+  "adminPinHash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+  "profile": {
+    "name": "aiThss",
+    "handle": "@aithss",
+    "bio": "Full-stack Developer & Creative Technologist. Xây dựng giải pháp AI & trải nghiệm web hiện đại.",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+    "status": {
+      "text": "Sẵn sàng nhận dự án",
+      "dotColor": "#10b981",
+      "visible": true
+    },
+    "location": "Hà Nội, Việt Nam 🇻🇳",
+    "verified": true,
+    "theme": "cyber-dark",
+    "backgroundEffect": "aurora",
+    "soundEnabled": true
+  },
+  "socials": [
+    {
+      "id": "telegram",
+      "name": "Telegram",
+      "url": "https://t.me/aithss",
+      "icon": "telegram",
+      "active": true
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "url": "https://github.com/aithss",
+      "icon": "github",
+      "active": true
+    },
+    {
+      "id": "facebook",
+      "name": "Facebook",
+      "url": "https://facebook.com",
+      "icon": "facebook",
+      "active": true
+    },
+    {
+      "id": "zalo",
+      "name": "Zalo",
+      "url": "https://zalo.me",
+      "icon": "zalo",
+      "active": true
+    },
+    {
+      "id": "tiktok",
+      "name": "TikTok",
+      "url": "https://tiktok.com",
+      "icon": "tiktok",
+      "active": true
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "url": "https://youtube.com",
+      "icon": "youtube",
+      "active": false
+    },
+    {
+      "id": "email",
+      "name": "Email",
+      "url": "mailto:contact@aithss.dev",
+      "icon": "mail",
+      "active": true
+    }
+  ],
+  "donate": {
+    "enabled": true,
+    "bankId": "MB",
+    "accountNo": "0388888888",
+    "accountName": "DUONG DANH THANG",
+    "momoPhone": "0388888888",
+    "title": "Ủng hộ & Mua cà phê ☕",
+    "subtitle": "Quét mã VietQR hoặc MoMo để ủng hộ tác giả"
+  },
+  "music": {
+    "enabled": true,
+    "title": "Lofi Chill Beats",
+    "artist": "Relaxing Flow",
+    "audioUrl": "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3",
+    "autoplay": false
+  },
+  "categories": [
+    {
+      "id": "all",
+      "name": "Tất cả"
+    },
+    {
+      "id": "featured",
+      "name": "Nổi bật"
+    },
+    {
+      "id": "projects",
+      "name": "Dự án"
+    },
+    {
+      "id": "social",
+      "name": "Mạng xã hội"
+    },
+    {
+      "id": "services",
+      "name": "Liên hệ & Dịch vụ"
+    }
+  ],
+  "links": [
+    {
+      "id": "link-1",
+      "title": "🚀 Portfolio & Dự án Công nghệ",
+      "subtitle": "Khám phá các sản phẩm AI, Web Apps và kho mã nguồn mở nổi bật",
+      "url": "https://github.com/aithss",
+      "category": "projects",
+      "badge": "HOT",
+      "badgeColor": "#f43f5e",
+      "icon": "sparkles",
+      "featured": true,
+      "active": true,
+      "clicks": 188
+    },
+    {
+      "id": "link-2",
+      "title": "💬 Nhắn tin trực tiếp qua Telegram",
+      "subtitle": "Trao đổi công việc, hợp tác dự án hoặc hỗ trợ kỹ thuật nhanh 24/7",
+      "url": "https://t.me/aithss",
+      "category": "services",
+      "badge": "ONLINE",
+      "badgeColor": "#06b6d4",
+      "icon": "telegram",
+      "featured": false,
+      "active": true,
+      "clicks": 112
+    },
+    {
+      "id": "link-3",
+      "title": "📦 Kho mã nguồn GitHub",
+      "subtitle": "Các repo open source, script tự động hóa và tiện ích hữu ích",
+      "url": "https://github.com/aithss",
+      "category": "projects",
+      "badge": "REPOS",
+      "badgeColor": "#8b5cf6",
+      "icon": "github",
+      "featured": false,
+      "active": true,
+      "clicks": 76
+    },
+    {
+      "id": "link-4",
+      "title": "☕ Mời mình một ly cà phê",
+      "subtitle": "Ủng hộ tác giả duy trì server và sáng tạo thêm nhiều dự án miễn phí",
+      "url": "#donate",
+      "category": "services",
+      "badge": "DONATE",
+      "badgeColor": "#eab308",
+      "icon": "coffee",
+      "featured": false,
+      "active": true,
+      "clicks": 45
+    }
+  ],
+  "stats": {
+    "totalViews": 248,
+    "lastUpdated": "2026-09-28T16:46:26.787Z"
+  }
+}

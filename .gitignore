@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Legacy tools & binaries
+_legacy_tools/
+*.exe
+*.dll
+
+# Environment & logs
+.env
+data/sessions.json
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
