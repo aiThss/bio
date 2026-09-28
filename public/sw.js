@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aithss-bio-v1';
+const CACHE_NAME = 'aithss-bio-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -8,7 +8,10 @@ const ASSETS = [
   '/js/qr.js',
   '/js/app.js',
   '/js/admin.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/assets/favicon.svg',
+  '/assets/icon-192.png',
+  '/assets/icon-512.png'
 ];
 
 self.addEventListener('install', (e) => {

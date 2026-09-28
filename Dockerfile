@@ -9,6 +9,7 @@ RUN npm ci --only=production
 
 # Copy application files
 COPY server.js ./
+COPY default-data.json ./
 COPY public ./public
 COPY data ./data
 

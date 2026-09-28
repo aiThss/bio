@@ -90,6 +90,24 @@ function saveSessions() {
   }
 }
 
+function ensureDataInitialized() {
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    if (!fs.existsSync(DATA_FILE)) {
+      const template = path.join(__dirname, 'default-data.json');
+      if (fs.existsSync(template)) {
+        fs.copyFileSync(template, DATA_FILE);
+      }
+    }
+  } catch (err) {
+    console.error('Error ensuring data initialized:', err);
+  }
+}
+
+ensureDataInitialized();
 loadSessions();
 
 function getBioData() {
