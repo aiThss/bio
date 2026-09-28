@@ -651,9 +651,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .link-action-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 10px;
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -791,21 +793,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   gap: 8px;
 }
 
-.admin-stealth-link {
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 11.5px;
-  opacity: 0.5;
-  transition: opacity 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
 
-.admin-stealth-link:hover {
-  opacity: 1;
-  color: var(--accent-primary);
-}
 
 /* Toast Notifications */
 .toast-container {

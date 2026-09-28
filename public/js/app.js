@@ -83,11 +83,23 @@
     toastContainer: document.getElementById('toastContainer')
   };
 
+  // Helper: Escape HTML to prevent XSS
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+  window.escapeHtml = escapeHtml;
+
   // 1. Toast Notification Helper
   window.showToast = function (message, icon = 'check') {
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.innerHTML = `<span>${window.getIcon(icon, 18)}</span> <span>${message}</span>`;
+    toast.innerHTML = `<span>${window.getIcon(icon, 18)}</span> <span>${escapeHtml(message)}</span>`;
     el.toastContainer.appendChild(toast);
 
     if (navigator.vibrate) navigator.vibrate(20);
@@ -335,20 +347,23 @@
       let badgeHtml = '';
       if (link.badge) {
         const badgeColor = link.badgeColor || 'var(--accent-primary)';
-        badgeHtml = `<span class="link-badge" style="background: ${badgeColor};">${link.badge}</span>`;
+        badgeHtml = `<span class="link-badge" style="background: ${badgeColor};">${escapeHtml(link.badge)}</span>`;
       }
+
+      const cleanTitle = escapeHtml(link.title);
+      const cleanSubtitle = link.subtitle ? `<span class="link-subtitle">${escapeHtml(link.subtitle)}</span>` : '';
 
       card.innerHTML = `
         <div class="link-icon-wrap" style="${link.featured ? 'color: var(--accent-primary);' : ''}">${iconSvg}</div>
         <div class="link-content">
           <div class="link-title-row">
-            <span class="link-title">${link.title}</span>
+            <span class="link-title">${cleanTitle}</span>
             ${badgeHtml}
           </div>
-          ${link.subtitle ? `<span class="link-subtitle">${link.subtitle}</span>` : ''}
+          ${cleanSubtitle}
         </div>
         <div class="link-actions">
-          <button class="link-action-btn copy-btn" title="Sao chép liên kết" aria-label="Sao chép ${link.title}">
+          <button class="link-action-btn copy-btn" title="Sao chép liên kết" aria-label="Sao chép ${cleanTitle}">
             ${window.getIcon('copy', 15)}
           </button>
           <span class="click-counter" title="Số lượt click">${link.clicks || 0}</span>
@@ -376,15 +391,23 @@
         const counter = card.querySelector('.click-counter');
         if (counter) counter.textContent = link.clicks;
 
-        if (link.url.startsWith('#')) {
+        const targetUrl = String(link.url || '').trim();
+
+        if (targetUrl.startsWith('#')) {
           // Internal modal triggers like #donate
-          if (link.url === '#donate') openModal('donateModal');
-          if (link.url === '#qr') openModal('qrModal');
-          if (link.url === '#contact') openModal('contactModal');
+          if (targetUrl === '#donate') openModal('donateModal');
+          if (targetUrl === '#qr') openModal('qrModal');
+          if (targetUrl === '#contact') openModal('contactModal');
           return;
         }
 
-        window.open(link.url, '_blank', 'noopener,noreferrer');
+        // Prevent javascript: or unsafe schemes
+        if (/^javascript:/i.test(targetUrl)) {
+          console.warn('Blocked unsafe URL scheme');
+          return;
+        }
+
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
       });
 
       el.linksList.appendChild(card);
@@ -484,21 +507,39 @@
   el.themeToggleBtn.addEventListener('click', cycleTheme);
 
   // 14. Audio Player Controller
+  el.bgAudio.loop = true;
+
+  function syncAudioState(isPlaying) {
+    audioPlaying = isPlaying;
+    if (isPlaying) {
+      el.audioDock.classList.add('playing');
+      el.audioPlayIcon.innerHTML = window.getIcon('pause', 18);
+    } else {
+      el.audioDock.classList.remove('playing');
+      el.audioPlayIcon.innerHTML = window.getIcon('play', 18);
+    }
+  }
+
+  el.bgAudio.addEventListener('ended', () => syncAudioState(false));
+  el.bgAudio.addEventListener('pause', () => syncAudioState(false));
+  el.bgAudio.addEventListener('playing', () => syncAudioState(true));
+  el.bgAudio.addEventListener('error', () => {
+    syncAudioState(false);
+    showToast('Lỗi phát audio', 'xclose');
+  });
+
   el.audioPlayBtn.addEventListener('click', () => {
     if (!audioPlaying) {
       el.bgAudio.play().then(() => {
-        audioPlaying = true;
-        el.audioDock.classList.add('playing');
-        el.audioPlayIcon.innerHTML = window.getIcon('pause', 18);
+        syncAudioState(true);
         showToast('Đang phát nhạc nền chill 🎧', 'music');
-      }).catch(err => {
+      }).catch(() => {
+        syncAudioState(false);
         showToast('Không thể phát nhạc tự động', 'xclose');
       });
     } else {
       el.bgAudio.pause();
-      audioPlaying = false;
-      el.audioDock.classList.remove('playing');
-      el.audioPlayIcon.innerHTML = window.getIcon('play', 18);
+      syncAudioState(false);
     }
   });
 
@@ -517,11 +558,13 @@
     }
   });
 
-  // Stealth Link in Footer
-  el.adminStealthBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (window.openAdminView) window.openAdminView();
-  });
+  // Stealth Link in Footer (if present)
+  if (el.adminStealthBtn) {
+    el.adminStealthBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (window.openAdminView) window.openAdminView();
+    });
+  }
 
   // Set Year in footer
   if (el.currentYear) el.currentYear.textContent = new Date().getFullYear();

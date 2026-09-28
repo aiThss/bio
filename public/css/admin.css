@@ -297,9 +297,9 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   color: #ffffff;
-  font-size: 14px;
+  font-size: 16px; /* 16px prevents iOS Safari auto-zoom */
   font-family: inherit;
   outline: none;
   transition: border-color 0.2s ease;
@@ -319,6 +319,12 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Toggle Switch Component (Uiverse styled) */
@@ -385,11 +391,13 @@ input[type="checkbox"]:checked + .switch-control::after {
   border: none;
   color: #64748b;
   cursor: pointer;
-  padding: 2px;
+  padding: 4px;
+  min-width: 28px;
+  min-height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .reorder-btn:hover {
@@ -403,7 +411,7 @@ input[type="checkbox"]:checked + .switch-control::after {
 }
 
 .admin-link-title {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #f8fafc;
   white-space: nowrap;
@@ -422,13 +430,15 @@ input[type="checkbox"]:checked + .switch-control::after {
 .admin-item-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .btn-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #cbd5e1;

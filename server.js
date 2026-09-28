@@ -6,21 +6,69 @@ const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data', 'bio-data.json');
-const SESSIONS_FILE = path.join(__dirname, 'data', 'sessions.json');
+const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data', 'bio-data.json');
+const SESSIONS_FILE = process.env.SESSIONS_FILE || path.join(__dirname, 'data', 'sessions.json');
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Memory Store & Atomic Data Management ---
-let activeSessions = new Set();
+let activeSessions = new Map(); // token -> { createdAt: timestamp }
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Brute Force Lockout Protection (5 failed attempts -> 15 min lock)
+const loginAttempts = new Map(); // ip -> { count: number, lockedUntil: number }
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000;
+
+function checkRateLimit(ip) {
+  const entry = loginAttempts.get(ip);
+  if (!entry) return { allowed: true };
+  if (entry.lockedUntil && entry.lockedUntil > Date.now()) {
+    const waitSeconds = Math.ceil((entry.lockedUntil - Date.now()) / 1000);
+    return { allowed: false, waitSeconds };
+  }
+  if (entry.lockedUntil && entry.lockedUntil <= Date.now()) {
+    loginAttempts.delete(ip);
+    return { allowed: true };
+  }
+  return { allowed: true };
+}
+
+function recordFailedLogin(ip) {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip) || { count: 0, firstAttempt: now };
+  entry.count += 1;
+  if (entry.count >= MAX_ATTEMPTS) {
+    entry.lockedUntil = now + LOCKOUT_MS;
+  }
+  loginAttempts.set(ip, entry);
+  return entry;
+}
+
+function clearLoginAttempts(ip) {
+  loginAttempts.delete(ip);
+}
+
+function resetRateLimit() {
+  loginAttempts.clear();
+}
 
 function loadSessions() {
   try {
     if (fs.existsSync(SESSIONS_FILE)) {
       const data = JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf-8'));
-      if (Array.isArray(data)) activeSessions = new Set(data);
+      if (Array.isArray(data)) {
+        activeSessions.clear();
+        for (const item of data) {
+          if (typeof item === 'string') {
+            activeSessions.set(item, { createdAt: Date.now() });
+          } else if (item && item.token) {
+            activeSessions.set(item.token, { createdAt: item.createdAt || Date.now() });
+          }
+        }
+      }
     }
   } catch (err) {
     console.error('Error loading sessions:', err);
@@ -29,7 +77,14 @@ function loadSessions() {
 
 function saveSessions() {
   try {
-    fs.writeFileSync(SESSIONS_FILE, JSON.stringify([...activeSessions]), 'utf-8');
+    const list = [];
+    const now = Date.now();
+    for (const [token, meta] of activeSessions.entries()) {
+      if (now - meta.createdAt < SESSION_TTL_MS) {
+        list.push({ token, createdAt: meta.createdAt });
+      }
+    }
+    fs.writeFileSync(SESSIONS_FILE, JSON.stringify(list), 'utf-8');
   } catch (err) {
     console.error('Error saving sessions:', err);
   }
@@ -54,6 +109,15 @@ function hashPin(pin) {
   return crypto.createHash('sha256').update(String(pin).trim()).digest('hex');
 }
 
+function isValidUrlScheme(str) {
+  if (!str) return false;
+  const s = String(str).trim();
+  if (s.startsWith('#')) return true;
+  if (s.startsWith('mailto:') || s.startsWith('tel:')) return true;
+  if (/^https?:\/\//i.test(s)) return true;
+  return false;
+}
+
 // Auth Middleware
 function requireAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -61,8 +125,14 @@ function requireAdmin(req, res, next) {
     return res.status(401).json({ error: 'Chưa xác thực hoặc phiên đăng nhập đã hết hạn' });
   }
   const token = authHeader.split(' ')[1];
-  if (!activeSessions.has(token)) {
+  const session = activeSessions.get(token);
+  if (!session) {
     return res.status(401).json({ error: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn' });
+  }
+  if (Date.now() - session.createdAt > SESSION_TTL_MS) {
+    activeSessions.delete(token);
+    saveSessions();
+    return res.status(401).json({ error: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' });
   }
   next();
 }
@@ -114,6 +184,14 @@ app.post('/api/click/:id', (req, res) => {
 // Admin Login with PIN
 app.post('/api/admin/login', (req, res) => {
   try {
+    const clientIp = req.ip || req.socket.remoteAddress || '127.0.0.1';
+    const rateCheck = checkRateLimit(clientIp);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({
+        error: `Quá nhiều lần thử sai mã PIN. Vui lòng thử lại sau ${Math.ceil(rateCheck.waitSeconds / 60)} phút.`
+      });
+    }
+
     const { pin } = req.body;
     if (!pin) {
       return res.status(400).json({ error: 'Vui lòng nhập mã PIN quản trị' });
@@ -122,11 +200,18 @@ app.post('/api/admin/login', (req, res) => {
     const enteredHash = hashPin(pin);
 
     if (enteredHash !== data.adminPinHash) {
-      return res.status(401).json({ error: 'Mã PIN quản trị không chính xác' });
+      const entry = recordFailedLogin(clientIp);
+      const remaining = Math.max(0, MAX_ATTEMPTS - entry.count);
+      return res.status(401).json({
+        error: remaining > 0
+          ? `Mã PIN quản trị không chính xác (còn ${remaining} lần thử)`
+          : 'Mã PIN sai quá 5 lần. Hệ thống tạm khóa 15 phút để bảo vệ.'
+      });
     }
 
+    clearLoginAttempts(clientIp);
     const token = crypto.randomBytes(32).toString('hex');
-    activeSessions.add(token);
+    activeSessions.set(token, { createdAt: Date.now() });
     saveSessions();
 
     res.json({
@@ -244,6 +329,22 @@ app.put('/api/admin/music', requireAdmin, (req, res) => {
   }
 });
 
+// Update Categories
+app.put('/api/admin/categories', requireAdmin, (req, res) => {
+  try {
+    const { categories } = req.body;
+    if (!Array.isArray(categories)) {
+      return res.status(400).json({ error: 'Dữ liệu categories phải là danh sách' });
+    }
+    const data = getBioData();
+    data.categories = categories;
+    saveBioData(data);
+    res.json({ success: true, categories: data.categories });
+  } catch (err) {
+    res.status(500).json({ error: 'Lỗi cập nhật danh mục' });
+  }
+});
+
 // --- Links CRUD ---
 
 // 1. Get all links
@@ -262,6 +363,9 @@ app.post('/api/admin/links', requireAdmin, (req, res) => {
     const { title, url, subtitle, category, badge, badgeColor, icon, featured, active } = req.body;
     if (!title || !url) {
       return res.status(400).json({ error: 'Tiêu đề và đường dẫn URL là bắt buộc' });
+    }
+    if (!isValidUrlScheme(url)) {
+      return res.status(400).json({ error: 'URL không hợp lệ. Vui lòng bắt đầu bằng https://, http://, mailto:, tel: hoặc #' });
     }
 
     const data = getBioData();
@@ -295,6 +399,10 @@ app.post('/api/admin/links', requireAdmin, (req, res) => {
 app.put('/api/admin/links/:id', requireAdmin, (req, res) => {
   try {
     const linkId = req.params.id;
+    if (req.body.url && !isValidUrlScheme(req.body.url)) {
+      return res.status(400).json({ error: 'URL không hợp lệ. Vui lòng bắt đầu bằng https://, http://, mailto:, tel: hoặc #' });
+    }
+
     const data = getBioData();
     const index = (data.links || []).findIndex(l => l.id === linkId);
 
@@ -420,4 +528,4 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔒 Hidden Admin available at http://localhost:${PORT}/admin (Default PIN: admin123)`);
 });
 
-module.exports = { app, server };
+module.exports = { app, server, resetRateLimit };

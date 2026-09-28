@@ -132,10 +132,31 @@
     document.querySelectorAll('.tab-icon-security').forEach(e => e.innerHTML = window.getIcon('lock', 16));
   }
 
+  const escapeHtml = window.escapeHtml || function (str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
+  function isValidUrl(s) {
+    if (!s) return false;
+    const t = String(s).trim();
+    if (t.startsWith('#')) return true;
+    if (t.startsWith('mailto:') || t.startsWith('tel:')) return true;
+    if (/^https?:\/\//i.test(t)) return true;
+    return false;
+  }
+
   // 2. Open / Close Admin View
-  window.openAdminView = async function () {
+  window.openAdminView = async function (skipPush = false) {
     el.adminView.classList.add('active');
-    history.replaceState(null, '', '#admin');
+    if (!skipPush && window.location.pathname !== '/admin') {
+      try { history.pushState({ view: 'admin' }, '', '/admin'); } catch (e) {}
+    }
 
     if (adminToken) {
       try {
@@ -150,9 +171,11 @@
     showPinScreen();
   };
 
-  function closeAdminView() {
+  function closeAdminView(skipPush = false) {
     el.adminView.classList.remove('active');
-    history.replaceState(null, '', window.location.pathname === '/admin' ? '/' : window.location.pathname);
+    if (!skipPush && window.location.pathname === '/admin') {
+      try { history.pushState({ view: 'bio' }, '', '/'); } catch (e) {}
+    }
     if (window.reloadBioApp) window.reloadBioApp();
   }
 
@@ -313,12 +336,17 @@
       const isFirst = idx === 0;
       const isLast = idx === links.length - 1;
 
+      const cleanTitle = escapeHtml(link.title);
+      const cleanUrl = escapeHtml(link.url);
+      const cleanBadge = escapeHtml(link.badge || '');
+      const cleanBadgeColor = escapeHtml(link.badgeColor || '#f43f5e');
+
       row.innerHTML = `
         <div class="reorder-btns">
-          <button class="reorder-btn move-up" ${isFirst ? 'disabled style="opacity:0.2;"' : ''} title="Di chuyển lên">
+          <button class="reorder-btn move-up" ${isFirst ? 'disabled style="opacity:0.2;"' : ''} title="Di chuyển lên" aria-label="Di chuyển lên">
             ${window.getIcon('arrow-up', 14)}
           </button>
-          <button class="reorder-btn move-down" ${isLast ? 'disabled style="opacity:0.2;"' : ''} title="Di chuyển xuống">
+          <button class="reorder-btn move-down" ${isLast ? 'disabled style="opacity:0.2;"' : ''} title="Di chuyển xuống" aria-label="Di chuyển xuống">
             ${window.getIcon('arrow-down', 14)}
           </button>
         </div>
@@ -329,11 +357,11 @@
 
         <div class="admin-link-info">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="admin-link-title">${link.title}</span>
-            ${link.badge ? `<span class="link-badge" style="background:${link.badgeColor || '#f43f5e'}; font-size: 9px; padding: 1px 5px;">${link.badge}</span>` : ''}
+            <span class="admin-link-title">${cleanTitle}</span>
+            ${cleanBadge ? `<span class="link-badge" style="background:${cleanBadgeColor}; font-size: 9px; padding: 1px 5px;">${cleanBadge}</span>` : ''}
             ${link.featured ? `<span style="color: #fbbf24; display:flex;">${window.getIcon('sparkles', 12)}</span>` : ''}
           </div>
-          <span class="admin-link-sub">${link.url} • <strong>${link.clicks || 0} clicks</strong></span>
+          <span class="admin-link-sub">${cleanUrl} • <strong>${Number(link.clicks) || 0} clicks</strong></span>
         </div>
 
         <div class="admin-item-actions">
@@ -341,8 +369,8 @@
             <input type="checkbox" class="toggle-link-active" ${link.active !== false ? 'checked' : ''} style="display:none;">
             <span class="switch-control" style="width: 34px; height: 18px;"></span>
           </label>
-          <button class="btn-icon edit-link-btn" title="Chỉnh sửa">${window.getIcon('edit', 15)}</button>
-          <button class="btn-icon delete delete-link-btn" title="Xóa">${window.getIcon('trash', 15)}</button>
+          <button class="btn-icon edit-link-btn" title="Chỉnh sửa" aria-label="Chỉnh sửa">${window.getIcon('edit', 15)}</button>
+          <button class="btn-icon delete delete-link-btn" title="Xóa" aria-label="Xóa">${window.getIcon('trash', 15)}</button>
         </div>
       `;
 
@@ -417,8 +445,29 @@
     }
   }
 
+  // Helper to dynamically populate category options in link modal
+  function updateCategorySelectOptions() {
+    if (!el.selLinkCategory || !adminData) return;
+    const cats = adminData.categories || [
+      { id: 'all', name: 'Tất cả' },
+      { id: 'projects', name: 'Dự án' },
+      { id: 'services', name: 'Liên hệ & Dịch vụ' },
+      { id: 'social', name: 'Mạng xã hội' }
+    ];
+    const prev = el.selLinkCategory.value;
+    el.selLinkCategory.innerHTML = '';
+    cats.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `${c.name} (${c.id})`;
+      el.selLinkCategory.appendChild(opt);
+    });
+    if (prev) el.selLinkCategory.value = prev;
+  }
+
   // 11. Modal Add/Edit Link
   function openAddLinkModal() {
+    updateCategorySelectOptions();
     el.linkModalTitle.textContent = 'Thêm liên kết mới';
     el.editLinkId.value = '';
     el.linkForm.reset();
@@ -429,6 +478,7 @@
   }
 
   function openEditLinkModal(link) {
+    updateCategorySelectOptions();
     el.linkModalTitle.textContent = 'Chỉnh sửa liên kết';
     el.editLinkId.value = link.id;
     el.inpLinkTitle.value = link.title;
@@ -454,9 +504,16 @@
   el.linkForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = el.editLinkId.value;
+    const rawUrl = el.inpLinkUrl.value.trim();
+
+    if (!isValidUrl(rawUrl)) {
+      window.showToast('Vui lòng nhập URL hợp lệ (bắt đầu bằng https://, http://, #donate, mailto:, tel:)', 'xclose');
+      return;
+    }
+
     const payload = {
       title: el.inpLinkTitle.value.trim(),
-      url: el.inpLinkUrl.value.trim(),
+      url: rawUrl,
       subtitle: el.inpLinkSubtitle.value.trim(),
       category: el.selLinkCategory.value,
       icon: el.selLinkIcon.value,
@@ -676,10 +733,14 @@
     input.click();
   });
 
-  // Check initial route on load
+  // Check initial route and handle back/forward navigation
   function checkRoute() {
     if (window.location.pathname === '/admin' || window.location.hash === '#admin') {
-      window.openAdminView();
+      window.openAdminView(true);
+    } else {
+      if (el.adminView && el.adminView.classList.contains('active')) {
+        closeAdminView(true);
+      }
     }
   }
 

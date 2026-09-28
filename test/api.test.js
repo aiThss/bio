@@ -4,12 +4,18 @@ const http = require('http');
 const path = require('path');
 const fs = require('fs');
 
-// Set test port
+// Set test files to avoid polluting production bio-data.json
+const TEST_DATA_FILE = path.join(__dirname, 'test-bio-data.json');
+const TEST_SESSIONS_FILE = path.join(__dirname, 'test-sessions.json');
+const REAL_DATA_FILE = path.join(__dirname, '..', 'data', 'bio-data.json');
+
+fs.copyFileSync(REAL_DATA_FILE, TEST_DATA_FILE);
+fs.writeFileSync(TEST_SESSIONS_FILE, '[]', 'utf-8');
+
+process.env.DATA_FILE = TEST_DATA_FILE;
+process.env.SESSIONS_FILE = TEST_SESSIONS_FILE;
 process.env.PORT = '3099';
 const BASE_URL = 'http://localhost:3099';
-
-// Start server
-let serverProcess;
 
 function request(urlPath, options = {}) {
   return new Promise((resolve, reject) => {
@@ -54,12 +60,12 @@ describe('aiThss Bio Backend & API Test Suite', () => {
   let adminToken = '';
   let createdLinkId = '';
   let serverInstance = null;
+  let resetRateLimit = null;
 
   before(async () => {
-    // Require server
     const mod = require('../server.js');
     serverInstance = mod.server;
-    // Wait for server to bind
+    resetRateLimit = mod.resetRateLimit;
     await new Promise(r => setTimeout(r, 500));
   });
 
@@ -67,6 +73,9 @@ describe('aiThss Bio Backend & API Test Suite', () => {
     if (serverInstance) {
       await new Promise(r => serverInstance.close(r));
     }
+    // Clean up temporary test files
+    if (fs.existsSync(TEST_DATA_FILE)) fs.unlinkSync(TEST_DATA_FILE);
+    if (fs.existsSync(TEST_SESSIONS_FILE)) fs.unlinkSync(TEST_SESSIONS_FILE);
   });
 
   test('1. GET /api/bio returns public profile, active links and hides adminPinHash', async () => {
@@ -80,7 +89,6 @@ describe('aiThss Bio Backend & API Test Suite', () => {
   });
 
   test('2. POST /api/click/:id tracks link clicks', async () => {
-    // Fetch a link id
     const bioRes = await request('/api/bio');
     const firstLink = bioRes.json.links[0];
     assert.ok(firstLink, 'At least one link exists');
@@ -96,6 +104,8 @@ describe('aiThss Bio Backend & API Test Suite', () => {
   });
 
   test('3. POST /api/admin/login rejects wrong PIN and accepts correct PIN', async () => {
+    if (resetRateLimit) resetRateLimit();
+
     // Wrong PIN
     const failRes = await request('/api/admin/login', {
       method: 'POST',
@@ -249,5 +259,76 @@ describe('aiThss Bio Backend & API Test Suite', () => {
     });
     assert.strictEqual(res.status, 400);
     assert.ok(res.json.error);
+  });
+
+  test('15. Security: Link creation rejects unsafe URL schemes (javascript:)', async () => {
+    const res = await request('/api/admin/links', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: { title: 'Malicious Link', url: 'javascript:alert(1)' }
+    });
+    assert.strictEqual(res.status, 400);
+    assert.ok(res.json.error.includes('URL không hợp lệ'));
+
+    // Verify valid schemes are allowed
+    const validHashRes = await request('/api/admin/links', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: { title: 'Donate Anchor', url: '#donate' }
+    });
+    assert.strictEqual(validHashRes.status, 201);
+    await request(`/api/admin/links/${validHashRes.json.link.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` }
+    });
+  });
+
+  test('16. Categories Management: PUT /api/admin/categories updates category list', async () => {
+    const newCats = [
+      { id: 'all', name: 'Tất cả' },
+      { id: 'projects', name: 'Dự án' },
+      { id: 'services', name: 'Dịch vụ' },
+      { id: 'social', name: 'Xã hội' },
+      { id: 'custom', name: 'Góc sáng tạo' }
+    ];
+    const res = await request('/api/admin/categories', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: { categories: newCats }
+    });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.json.categories.length, 5);
+
+    // Non-array rejection
+    const failRes = await request('/api/admin/categories', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: { categories: 'not-array' }
+    });
+    assert.strictEqual(failRes.status, 400);
+  });
+
+  test('17. Security: Brute-force lockout triggers 429 after 5 failed PIN attempts', async () => {
+    if (resetRateLimit) resetRateLimit();
+
+    // Send 5 wrong attempts
+    for (let i = 0; i < 5; i++) {
+      const fail = await request('/api/admin/login', {
+        method: 'POST',
+        body: { pin: `wrong-${i}` }
+      });
+      assert.strictEqual(fail.status, 401);
+    }
+
+    // 6th attempt must be locked out with 429
+    const lockRes = await request('/api/admin/login', {
+      method: 'POST',
+      body: { pin: 'admin123' } // Even correct PIN gets rejected when locked
+    });
+    assert.strictEqual(lockRes.status, 429);
+    assert.ok(lockRes.json.error.includes('Quá nhiều lần thử'));
+
+    // Reset rate limit for subsequent clean operations
+    if (resetRateLimit) resetRateLimit();
   });
 });

@@ -2,11 +2,14 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#090a0f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="aiThss - Personal Bio, Portfolio & Tech Showcase">
+
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="apple-touch-icon" href="/assets/icon-192.png">
 
   <!-- OpenGraph -->
   <meta property="og:title" content="aiThss - Bio & Portfolio">
@@ -63,7 +66,7 @@
 
     <!-- Profile Header -->
     <section class="profile-card" aria-label="Thông tin cá nhân">
-      <div id="avatarWrapper" class="avatar-wrapper" title="Chạm 5 lần để mở Admin bí mật">
+      <div id="avatarWrapper" class="avatar-wrapper">
         <div class="avatar-ring"></div>
         <img id="profileAvatar" class="avatar-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80" alt="Ảnh đại diện" width="104" height="104" fetchpriority="high">
         <div id="profileStatusBadge" class="status-badge">
@@ -118,9 +121,6 @@
     <!-- Footer -->
     <footer class="footer-section">
       <p>© <span id="currentYear"></span> aiThss. Built with ⚡ & Passion.</p>
-      <a href="#admin" id="adminStealthBtn" class="admin-stealth-link">
-        <span id="adminLockIcon"></span> Quản trị viên
-      </a>
     </footer>
 
     <!-- Floating Ambient Audio Dock -->
@@ -548,7 +548,7 @@
 
         <div class="form-group">
           <label class="form-label" for="inpLinkUrl">Đường dẫn URL *</label>
-          <input id="inpLinkUrl" class="form-input" type="url" placeholder="https://..." required>
+          <input id="inpLinkUrl" class="form-input" type="text" placeholder="https://... hoặc #donate, mailto:, tel:" required>
         </div>
 
         <div class="form-group">

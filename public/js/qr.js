@@ -246,32 +246,41 @@
       const lightColor = options.lightColor || '#ffffff';
       const border = 3;
 
-      let typeNum = 3;
-      if (text.length > 32) typeNum = 4;
-      if (text.length > 55) typeNum = 5;
-      if (text.length > 80) typeNum = 6;
-      if (text.length > 105) typeNum = 7;
-      if (text.length > 140) typeNum = 9;
-
-      const qr = new QRCodeModel(typeNum);
-      qr.addData(text);
-      qr.make();
-
-      const count = qr.moduleCount;
-      const totalSize = count + border * 2;
-
-      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalSize} ${totalSize}" width="${size}" height="${size}" shape-rendering="crispEdges">`;
-      svg += `<rect width="${totalSize}" height="${totalSize}" fill="${lightColor}" rx="2"/>`;
-
-      for (let r = 0; r < count; r++) {
-        for (let c = 0; c < count; c++) {
-          if (qr.modules[r][c]) {
-            svg += `<rect x="${c + border}" y="${r + border}" width="1" height="1" fill="${darkColor}"/>`;
-          }
+      const str = String(text || '');
+      let typeNum = 10;
+      for (let t = 1; t <= 10; t++) {
+        const rs = RS_BLOCK_TABLE[t - 1];
+        const capacity = rs[0] * rs[2] - 3;
+        if (str.length <= capacity) {
+          typeNum = t;
+          break;
         }
       }
-      svg += `</svg>`;
-      return svg;
+
+      try {
+        const qr = new QRCodeModel(typeNum);
+        qr.addData(str);
+        qr.make();
+
+        const count = qr.moduleCount;
+        const totalSize = count + border * 2;
+
+        let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalSize} ${totalSize}" width="${size}" height="${size}" shape-rendering="crispEdges">`;
+        svg += `<rect width="${totalSize}" height="${totalSize}" fill="${lightColor}" rx="2"/>`;
+
+        for (let r = 0; r < count; r++) {
+          for (let c = 0; c < count; c++) {
+            if (qr.modules[r][c]) {
+              svg += `<rect x="${c + border}" y="${r + border}" width="1" height="1" fill="${darkColor}"/>`;
+            }
+          }
+        }
+        svg += `</svg>`;
+        return svg;
+      } catch (err) {
+        console.error('BioQR generation failed:', err);
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}"><rect width="100" height="100" fill="${lightColor}"/><text x="50" y="50" text-anchor="middle" font-size="10" fill="${darkColor}">Mã QR</text></svg>`;
+      }
     }
   };
 
