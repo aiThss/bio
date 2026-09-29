@@ -8,6 +8,7 @@
 
   let adminToken = localStorage.getItem('bio_admin_token') || null;
   let adminData = null;
+  let pendingAvatarDataUrl = '';
 
   // DOM Elements
   const el = {
@@ -59,6 +60,10 @@
     inpProfileName: document.getElementById('inpProfileName'),
     inpProfileHandle: document.getElementById('inpProfileHandle'),
     inpProfileAvatar: document.getElementById('inpProfileAvatar'),
+    inpProfileAvatarFile: document.getElementById('inpProfileAvatarFile'),
+    profileAvatarPreview: document.getElementById('profileAvatarPreview'),
+    clearAvatarUploadBtn: document.getElementById('clearAvatarUploadBtn'),
+    avatarUploadIcon: document.getElementById('avatarUploadIcon'),
     inpProfileBio: document.getElementById('inpProfileBio'),
     inpProfileLocation: document.getElementById('inpProfileLocation'),
     inpProfileStatusText: document.getElementById('inpProfileStatusText'),
@@ -84,6 +89,7 @@
     inpMusicTitle: document.getElementById('inpMusicTitle'),
     inpMusicArtist: document.getElementById('inpMusicArtist'),
     inpMusicAudioUrl: document.getElementById('inpMusicAudioUrl'),
+    inpMusicYoutubeUrl: document.getElementById('inpMusicYoutubeUrl'),
 
     // Security Tab
     adminChangePinForm: document.getElementById('adminChangePinForm'),
@@ -123,9 +129,10 @@
     if (el.addLinkIcon) el.addLinkIcon.innerHTML = window.getIcon('plus', 16);
     if (el.exportIcon) el.exportIcon.innerHTML = window.getIcon('download', 16);
     if (el.importIcon) el.importIcon.innerHTML = window.getIcon('upload', 16);
+    if (el.avatarUploadIcon) el.avatarUploadIcon.innerHTML = window.getIcon('image', 17);
 
     document.querySelectorAll('.tab-icon-links').forEach(e => e.innerHTML = window.getIcon('link', 16));
-    document.querySelectorAll('.tab-icon-profile').forEach(e => e.innerHTML = window.getIcon('sparkles', 16));
+    document.querySelectorAll('.tab-icon-profile').forEach(e => e.innerHTML = window.getIcon('user', 16));
     document.querySelectorAll('.tab-icon-socials').forEach(e => e.innerHTML = window.getIcon('globe', 16));
     document.querySelectorAll('.tab-icon-donate').forEach(e => e.innerHTML = window.getIcon('coffee', 16));
     document.querySelectorAll('.tab-icon-theme').forEach(e => e.innerHTML = window.getIcon('music', 16));
@@ -149,6 +156,48 @@
     if (t.startsWith('mailto:') || t.startsWith('tel:')) return true;
     if (/^https?:\/\//i.test(t)) return true;
     return false;
+  }
+
+  function prepareAvatarImage(file) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return Promise.reject(new Error('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP'));
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      return Promise.reject(new Error('Ảnh gốc không được lớn hơn 8 MB'));
+    }
+
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => {
+        const size = 512;
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
+        const width = image.naturalWidth * scale;
+        const height = image.naturalHeight * scale;
+        canvas.width = size;
+        canvas.height = size;
+        context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+
+        let result = canvas.toDataURL('image/webp', 0.84);
+        if (!result.startsWith('data:image/webp')) {
+          result = canvas.toDataURL('image/jpeg', 0.86);
+        }
+        URL.revokeObjectURL(objectUrl);
+        if (result.length > 3_000_000) {
+          reject(new Error('Ảnh sau khi nén vẫn quá lớn'));
+          return;
+        }
+        resolve(result);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error('Không thể đọc file ảnh này'));
+      };
+      image.src = objectUrl;
+    });
   }
 
   // 2. Open / Close Admin View
@@ -221,7 +270,7 @@
       const res = await apiCall('/api/admin/login', 'POST', { pin });
       adminToken = res.token;
       localStorage.setItem('bio_admin_token', adminToken);
-      window.showToast('Đăng nhập Quản trị thành công! 🚀', 'check');
+      window.showToast('Đăng nhập quản trị thành công', 'check');
       showDashboard();
     } catch (err) {
       el.adminPinInput.classList.add('shake');
@@ -290,7 +339,9 @@
     const prof = adminData.profile || {};
     el.inpProfileName.value = prof.name || '';
     el.inpProfileHandle.value = prof.handle || '';
-    el.inpProfileAvatar.value = prof.avatar || '';
+    pendingAvatarDataUrl = String(prof.avatar || '').startsWith('data:image/') ? prof.avatar : '';
+    el.inpProfileAvatar.value = pendingAvatarDataUrl ? '' : (prof.avatar || '');
+    el.profileAvatarPreview.src = prof.avatar || '/assets/icon-192.png';
     el.inpProfileBio.value = prof.bio || '';
     el.inpProfileLocation.value = prof.location || '';
     el.inpProfileStatusText.value = (prof.status && prof.status.text) || '';
@@ -315,6 +366,7 @@
     el.inpMusicTitle.value = mus.title || '';
     el.inpMusicArtist.value = mus.artist || '';
     el.inpMusicAudioUrl.value = mus.audioUrl || '';
+    el.inpMusicYoutubeUrl.value = mus.youtubeUrl || '';
   }
 
   // 8. Render Admin Links List
@@ -359,7 +411,7 @@
           <div style="display: flex; align-items: center; gap: 6px;">
             <span class="admin-link-title">${cleanTitle}</span>
             ${cleanBadge ? `<span class="link-badge" style="background:${cleanBadgeColor}; font-size: 9px; padding: 1px 5px;">${cleanBadge}</span>` : ''}
-            ${link.featured ? `<span style="color: #fbbf24; display:flex;">${window.getIcon('sparkles', 12)}</span>` : ''}
+            ${link.featured ? `<span style="color: var(--accent-primary); display:flex;">${window.getIcon('badge-check', 12)}</span>` : ''}
           </div>
           <span class="admin-link-sub">${cleanUrl} • <strong>${Number(link.clicks) || 0} clicks</strong></span>
         </div>
@@ -544,12 +596,39 @@
   });
 
   // 12. Save Profile Settings
+  el.inpProfileAvatarFile.addEventListener('change', async () => {
+    const file = el.inpProfileAvatarFile.files && el.inpProfileAvatarFile.files[0];
+    if (!file) return;
+    try {
+      pendingAvatarDataUrl = await prepareAvatarImage(file);
+      el.inpProfileAvatar.value = '';
+      el.profileAvatarPreview.src = pendingAvatarDataUrl;
+      window.showToast('Ảnh đã sẵn sàng để lưu', 'check');
+    } catch (err) {
+      el.inpProfileAvatarFile.value = '';
+      window.showToast(err.message, 'xclose');
+    }
+  });
+
+  el.inpProfileAvatar.addEventListener('input', () => {
+    pendingAvatarDataUrl = '';
+    const value = el.inpProfileAvatar.value.trim();
+    if (/^https?:\/\//i.test(value)) el.profileAvatarPreview.src = value;
+  });
+
+  el.clearAvatarUploadBtn.addEventListener('click', () => {
+    pendingAvatarDataUrl = '';
+    el.inpProfileAvatarFile.value = '';
+    el.profileAvatarPreview.src = el.inpProfileAvatar.value.trim() || '/assets/icon-192.png';
+    el.inpProfileAvatar.focus();
+  });
+
   el.adminProfileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = {
       name: el.inpProfileName.value.trim(),
       handle: el.inpProfileHandle.value.trim(),
-      avatar: el.inpProfileAvatar.value.trim(),
+      avatar: pendingAvatarDataUrl || el.inpProfileAvatar.value.trim(),
       bio: el.inpProfileBio.value.trim(),
       location: el.inpProfileLocation.value.trim(),
       verified: el.chkProfileVerified.checked,
@@ -563,6 +642,7 @@
     try {
       await apiCall('/api/admin/profile', 'PUT', payload);
       adminData.profile = { ...adminData.profile, ...payload };
+      el.profileAvatarPreview.src = payload.avatar || '/assets/icon-192.png';
       window.showToast('Đã lưu thông tin hồ sơ!', 'check');
     } catch (err) {
       window.showToast('Lỗi: ' + err.message, 'xclose');
@@ -658,7 +738,8 @@
       enabled: el.chkMusicEnabled.checked,
       title: el.inpMusicTitle.value.trim(),
       artist: el.inpMusicArtist.value.trim(),
-      audioUrl: el.inpMusicAudioUrl.value.trim()
+      audioUrl: el.inpMusicAudioUrl.value.trim(),
+      youtubeUrl: el.inpMusicYoutubeUrl.value.trim()
     };
 
     try {

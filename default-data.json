@@ -10,7 +10,7 @@
       "dotColor": "#10b981",
       "visible": true
     },
-    "location": "Hà Nội, Việt Nam 🇻🇳",
+    "location": "Hà Nội, Việt Nam",
     "verified": true,
     "theme": "cyber-dark",
     "backgroundEffect": "aurora",
@@ -73,7 +73,7 @@
     "accountNo": "0388888888",
     "accountName": "DUONG DANH THANG",
     "momoPhone": "0388888888",
-    "title": "Ủng hộ & Mua cà phê ☕",
+    "title": "Ủng hộ dự án",
     "subtitle": "Quét mã VietQR hoặc MoMo để ủng hộ tác giả"
   },
   "music": {
@@ -81,6 +81,7 @@
     "title": "Lofi Chill Beats",
     "artist": "Relaxing Flow",
     "audioUrl": "https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3",
+    "youtubeUrl": "",
     "autoplay": false
   },
   "categories": [
@@ -108,24 +109,24 @@
   "links": [
     {
       "id": "link-1",
-      "title": "🚀 Portfolio & Dự án Công nghệ",
-      "subtitle": "Khám phá các sản phẩm AI, Web Apps và kho mã nguồn mở nổi bật",
+      "title": "Portfolio & dự án công nghệ",
+      "subtitle": "Các sản phẩm AI, web app và dự án mã nguồn mở",
       "url": "https://github.com/aithss",
       "category": "projects",
-      "badge": "HOT",
+      "badge": "Nổi bật",
       "badgeColor": "#f43f5e",
-      "icon": "sparkles",
+      "icon": "code",
       "featured": true,
       "active": true,
       "clicks": 188
     },
     {
       "id": "link-2",
-      "title": "💬 Nhắn tin trực tiếp qua Telegram",
-      "subtitle": "Trao đổi công việc, hợp tác dự án hoặc hỗ trợ kỹ thuật nhanh 24/7",
+      "title": "Nhắn tin qua Telegram",
+      "subtitle": "Trao đổi công việc, hợp tác dự án hoặc hỗ trợ kỹ thuật",
       "url": "https://t.me/aithss",
       "category": "services",
-      "badge": "ONLINE",
+      "badge": "Trực tuyến",
       "badgeColor": "#06b6d4",
       "icon": "telegram",
       "featured": false,
@@ -134,11 +135,11 @@
     },
     {
       "id": "link-3",
-      "title": "📦 Kho mã nguồn GitHub",
-      "subtitle": "Các repo open source, script tự động hóa và tiện ích hữu ích",
+      "title": "Kho mã nguồn GitHub",
+      "subtitle": "Dự án mã nguồn mở, công cụ tự động hóa và tiện ích",
       "url": "https://github.com/aithss",
       "category": "projects",
-      "badge": "REPOS",
+      "badge": "GitHub",
       "badgeColor": "#8b5cf6",
       "icon": "github",
       "featured": false,
@@ -147,11 +148,11 @@
     },
     {
       "id": "link-4",
-      "title": "☕ Mời mình một ly cà phê",
-      "subtitle": "Ủng hộ tác giả duy trì server và sáng tạo thêm nhiều dự án miễn phí",
+      "title": "Ủng hộ các dự án độc lập",
+      "subtitle": "Giúp duy trì máy chủ và phát triển thêm sản phẩm miễn phí",
       "url": "#donate",
       "category": "services",
-      "badge": "DONATE",
+      "badge": "Ủng hộ",
       "badgeColor": "#eab308",
       "icon": "coffee",
       "featured": false,

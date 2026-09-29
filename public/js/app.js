@@ -9,6 +9,7 @@
   let bioData = null;
   let activeCategory = 'all';
   let audioPlaying = false;
+  let youtubeVideoId = '';
   let avatarTapCount = 0;
   let avatarTapTimer = null;
 
@@ -74,6 +75,8 @@
     audioPlayIcon: document.getElementById('audioPlayIcon'),
     audioTitle: document.getElementById('audioTitle'),
     audioArtist: document.getElementById('audioArtist'),
+    youtubePlayerPanel: document.getElementById('youtubePlayerPanel'),
+    youtubePlayerFrame: document.getElementById('youtubePlayerFrame'),
     bgAudio: document.getElementById('bgAudio'),
 
     // Stealth Admin
@@ -94,6 +97,37 @@
       .replace(/'/g, '&#039;');
   }
   window.escapeHtml = escapeHtml;
+
+  function getYouTubeVideoId(value) {
+    if (!value) return '';
+    try {
+      const url = new URL(value);
+      const host = url.hostname.replace(/^www\./, '').toLowerCase();
+      if (host === 'youtu.be') {
+        const id = url.pathname.split('/').filter(Boolean)[0] || '';
+        return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : '';
+      }
+      if (!['youtube.com', 'music.youtube.com', 'm.youtube.com'].includes(host)) return '';
+      if (url.pathname === '/watch') {
+        const id = url.searchParams.get('v') || '';
+        return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : '';
+      }
+      const parts = url.pathname.split('/').filter(Boolean);
+      if (['embed', 'shorts'].includes(parts[0])) {
+        const id = parts[1] || '';
+        return /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : '';
+      }
+    } catch (err) {}
+    return '';
+  }
+
+  function closeYouTubePlayer() {
+    el.youtubePlayerPanel.classList.add('hidden');
+    el.youtubePlayerFrame.removeAttribute('src');
+    el.audioPlayBtn.setAttribute('aria-expanded', 'false');
+    el.audioPlayBtn.setAttribute('aria-label', 'Mở trình phát YouTube');
+    el.audioPlayIcon.innerHTML = window.getIcon('youtube', 19);
+  }
 
   // 1. Toast Notification Helper
   window.showToast = function (message, icon = 'check') {
@@ -133,7 +167,7 @@
 
   // 3. Initialize Top Icons
   function initIcons() {
-    if (el.themeIconWrap) el.themeIconWrap.innerHTML = window.getIcon('sparkles', 18);
+    if (el.themeIconWrap) el.themeIconWrap.innerHTML = window.getIcon('palette', 18);
     if (el.qrIconWrap) el.qrIconWrap.innerHTML = window.getIcon('qr-code', 18);
     if (el.shareIconWrap) el.shareIconWrap.innerHTML = window.getIcon('share', 18);
     if (el.actionQrIcon) el.actionQrIcon.innerHTML = window.getIcon('qr-code', 20);
@@ -180,7 +214,7 @@
     const nextIdx = (THEMES.indexOf(current) + 1) % THEMES.length;
     const nextTheme = THEMES[nextIdx];
     applyTheme(nextTheme);
-    showToast(`Đã đổi theme: ${nextTheme}`, 'sparkles');
+    showToast('Đã đổi bảng màu', 'palette');
     playClickSound();
   }
 
@@ -195,7 +229,7 @@
       console.error(err);
       // Fallback message if server error
       if (el.linksList) {
-        el.linksList.innerHTML = `<div style="text-align: center; padding: 40px 10px; color: #f43f5e;">
+        el.linksList.innerHTML = `<div style="text-align: center; padding: 40px 10px; color: var(--danger);">
           Không thể tải dữ liệu từ máy chủ. Vui lòng kiểm tra lại kết nối.
         </div>`;
       }
@@ -271,13 +305,30 @@
     renderLinks(links || []);
 
     // Ambient Music Player
-    if (music && music.enabled) {
+    youtubeVideoId = getYouTubeVideoId(music && music.youtubeUrl);
+    const hasAudioFile = Boolean(music && /^https?:\/\//i.test(music.audioUrl || ''));
+
+    if (music && music.enabled && (youtubeVideoId || hasAudioFile)) {
       el.audioDock.classList.remove('hidden');
       el.audioTitle.textContent = music.title || 'Lofi Chill Beats';
       el.audioArtist.textContent = music.artist || 'Relaxing Flow';
-      if (music.audioUrl) el.bgAudio.src = music.audioUrl;
+      el.bgAudio.pause();
+      el.bgAudio.removeAttribute('src');
+      closeYouTubePlayer();
+
+      if (youtubeVideoId) {
+        el.audioDock.classList.add('youtube-source');
+      } else {
+        el.audioDock.classList.remove('youtube-source');
+        el.bgAudio.src = music.audioUrl;
+        syncAudioState(false);
+        el.audioPlayBtn.removeAttribute('aria-expanded');
+        el.audioPlayBtn.setAttribute('aria-label', 'Phát / Dừng nhạc');
+      }
     } else {
       el.audioDock.classList.add('hidden');
+      el.audioDock.classList.remove('youtube-source');
+      closeYouTubePlayer();
     }
 
     updateLiveClock();
@@ -341,6 +392,8 @@
     filtered.forEach(link => {
       const card = document.createElement('div');
       card.className = `link-card ${link.featured ? 'featured' : ''}`;
+      card.setAttribute('role', 'link');
+      card.setAttribute('tabindex', '0');
 
       const iconSvg = window.getIcon(link.icon || 'link', 22);
 
@@ -367,7 +420,7 @@
             ${window.getIcon('copy', 15)}
           </button>
           <span class="click-counter" title="Số lượt click">${link.clicks || 0}</span>
-          <span class="link-action-btn" aria-hidden="true">${window.getIcon('external-link', 15)}</span>
+          <span class="link-action-btn" aria-hidden="true">${window.getIcon('arrow-up-right', 16)}</span>
         </div>
       `;
 
@@ -408,6 +461,13 @@
         }
 
         window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      });
+
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          card.click();
+        }
       });
 
       el.linksList.appendChild(card);
@@ -511,6 +571,10 @@
 
   function syncAudioState(isPlaying) {
     audioPlaying = isPlaying;
+    if (youtubeVideoId) {
+      el.audioDock.classList.remove('playing');
+      return;
+    }
     if (isPlaying) {
       el.audioDock.classList.add('playing');
       el.audioPlayIcon.innerHTML = window.getIcon('pause', 18);
@@ -529,10 +593,24 @@
   });
 
   el.audioPlayBtn.addEventListener('click', () => {
+    if (youtubeVideoId) {
+      const shouldOpen = el.youtubePlayerPanel.classList.contains('hidden');
+      if (shouldOpen) {
+        el.youtubePlayerFrame.src = `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?playsinline=1&rel=0`;
+        el.youtubePlayerPanel.classList.remove('hidden');
+        el.audioPlayBtn.setAttribute('aria-expanded', 'true');
+        el.audioPlayBtn.setAttribute('aria-label', 'Đóng trình phát YouTube');
+        el.audioPlayIcon.innerHTML = window.getIcon('xclose', 18);
+      } else {
+        closeYouTubePlayer();
+      }
+      return;
+    }
+
     if (!audioPlaying) {
       el.bgAudio.play().then(() => {
         syncAudioState(true);
-        showToast('Đang phát nhạc nền chill 🎧', 'music');
+        showToast('Đang phát nhạc nền', 'music');
       }).catch(() => {
         syncAudioState(false);
         showToast('Không thể phát nhạc tự động', 'xclose');
@@ -553,7 +631,7 @@
 
     if (avatarTapCount >= 5) {
       avatarTapCount = 0;
-      showToast('🔓 Chào Admin! Đang mở cửa sổ quản trị…', 'unlock');
+      showToast('Đang mở khu vực quản trị', 'unlock');
       if (window.openAdminView) window.openAdminView();
     }
   });

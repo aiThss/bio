@@ -1,13 +1,17 @@
-const CACHE_NAME = 'aithss-bio-v2';
+const CACHE_NAME = 'aithss-bio-v6';
 const ASSETS = [
   '/',
   '/index.html',
-  '/css/style.css',
-  '/css/admin.css',
-  '/js/icons.js',
+  '/vendor/phosphor/regular/style.css?v=2.1.2',
+  '/vendor/phosphor/regular/Phosphor.woff2',
+  '/vendor/phosphor/fill/style.css?v=2.1.2',
+  '/vendor/phosphor/fill/Phosphor-Fill.woff2',
+  '/css/style.css?v=5',
+  '/css/admin.css?v=5',
+  '/js/icons.js?v=5',
   '/js/qr.js',
-  '/js/app.js',
-  '/js/admin.js',
+  '/js/app.js?v=5',
+  '/js/admin.js?v=5',
   '/manifest.json',
   '/assets/favicon.svg',
   '/assets/icon-192.png',
@@ -39,6 +43,19 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   // Pass through API calls to network always
   if (e.request.url.includes('/api/')) {
+    return;
+  }
+
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
+          return response;
+        })
+        .catch(() => caches.match('/index.html'))
+    );
     return;
   }
 

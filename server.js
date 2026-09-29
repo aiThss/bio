@@ -51,6 +51,26 @@ function clearLoginAttempts(ip) {
   loginAttempts.delete(ip);
 }
 
+function isValidAvatarSource(value) {
+  if (!value) return true;
+  if (/^https?:\/\//i.test(value)) return true;
+  return /^data:image\/(?:jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value) && value.length <= 3_000_000;
+}
+
+function getYouTubeVideoId(value) {
+  if (!value) return '';
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^www\./, '').toLowerCase();
+    if (host === 'youtu.be') return url.pathname.split('/').filter(Boolean)[0] || '';
+    if (!['youtube.com', 'music.youtube.com', 'm.youtube.com'].includes(host)) return '';
+    if (url.pathname === '/watch') return url.searchParams.get('v') || '';
+    const parts = url.pathname.split('/').filter(Boolean);
+    if (['embed', 'shorts'].includes(parts[0])) return parts[1] || '';
+  } catch (err) {}
+  return '';
+}
+
 function resetRateLimit() {
   loginAttempts.clear();
 }
@@ -298,6 +318,9 @@ app.get('/api/admin/data', requireAdmin, (req, res) => {
 // Update Profile
 app.put('/api/admin/profile', requireAdmin, (req, res) => {
   try {
+    if (!isValidAvatarSource(req.body.avatar)) {
+      return res.status(400).json({ error: 'Ảnh đại diện phải là URL hợp lệ hoặc ảnh JPG, PNG, WebP dưới 3 MB' });
+    }
     const data = getBioData();
     data.profile = { ...data.profile, ...req.body };
     saveBioData(data);
@@ -338,6 +361,14 @@ app.put('/api/admin/donate', requireAdmin, (req, res) => {
 // Update Music Player
 app.put('/api/admin/music', requireAdmin, (req, res) => {
   try {
+    const audioUrl = String(req.body.audioUrl || '').trim();
+    const youtubeUrl = String(req.body.youtubeUrl || '').trim();
+    if (audioUrl && !/^https?:\/\//i.test(audioUrl)) {
+      return res.status(400).json({ error: 'Đường dẫn audio phải bắt đầu bằng http:// hoặc https://' });
+    }
+    if (youtubeUrl && !/^[a-zA-Z0-9_-]{11}$/.test(getYouTubeVideoId(youtubeUrl))) {
+      return res.status(400).json({ error: 'Link YouTube không hợp lệ' });
+    }
     const data = getBioData();
     data.music = { ...data.music, ...req.body };
     saveBioData(data);

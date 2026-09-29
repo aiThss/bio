@@ -206,6 +206,38 @@ describe('aiThss Bio Backend & API Test Suite', () => {
 
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.json.profile.location, 'Hà Nội, Việt Nam 🇻🇳');
+
+    const avatarRes = await request('/api/admin/profile', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: { avatar: 'data:image/webp;base64,UklGRg==' }
+    });
+    assert.strictEqual(avatarRes.status, 200);
+    assert.ok(avatarRes.json.profile.avatar.startsWith('data:image/webp;base64,'));
+
+    const invalidAvatarRes = await request('/api/admin/profile', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: { avatar: 'javascript:alert(1)' }
+    });
+    assert.strictEqual(invalidAvatarRes.status, 400);
+  });
+
+  test('8b. PUT /api/admin/music accepts YouTube links and rejects invalid hosts', async () => {
+    const validRes = await request('/api/admin/music', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: { youtubeUrl: 'https://www.youtube.com/watch?v=M7lc1UVf-VE' }
+    });
+    assert.strictEqual(validRes.status, 200);
+    assert.strictEqual(validRes.json.music.youtubeUrl, 'https://www.youtube.com/watch?v=M7lc1UVf-VE');
+
+    const invalidRes = await request('/api/admin/music', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: { youtubeUrl: 'https://example.com/watch?v=M7lc1UVf-VE' }
+    });
+    assert.strictEqual(invalidRes.status, 400);
   });
 
   test('9. GET /api/admin/export downloads backup data', async () => {
